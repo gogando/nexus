@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import javax.inject.Named;
+
 import thales.nexus.AirTrack;
 import thales.nexus.Connector;
 import thales.nexus.TrackStore;
@@ -31,6 +33,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
+@Named("adsb")
 public class SBS1Connector implements Connector, SBS1Observer {
 
 	private final SBS1Parser parser = ParserFactory.getDefaultParser();
