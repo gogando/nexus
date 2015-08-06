@@ -13,14 +13,14 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-all</artifactId>
-			<version>4.0.30.Final</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
 		</dependency>
 
 		<dependency>
-			<artifactId>sbs1-socket-services</artifactId>
 			<groupId>net.staniscia.sbs</groupId>
+			<artifactId>sbs1-parser-ascii</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 

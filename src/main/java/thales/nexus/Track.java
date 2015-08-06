@@ -1,5 +1,8 @@
 package thales.nexus;
 
-public interface Track {
-
+public class Track {
+	
+	public double lat;
+	public double lon;
+	
 }
