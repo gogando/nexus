@@ -6,7 +6,6 @@ public class SurfaceTrack extends Track
   public void setNavStatus(String str)
   {
     // TODO Auto-generated method stub
-    System.out.println("Nav status set to " + str);
   }
 
   public void setMarking(String name)

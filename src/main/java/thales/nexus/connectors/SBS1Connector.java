@@ -87,7 +87,9 @@ public class SBS1Connector implements Connector, SBS1Observer {
 				BufferedReader bufferedReader = new BufferedReader(streamReader);
 				while (running) {
 					String line = bufferedReader.readLine();
-					parser.processIt(line);
+					if (line != null) {
+						parser.processIt(line);
+					}
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -97,15 +99,16 @@ public class SBS1Connector implements Connector, SBS1Observer {
 	}
 
 	public void update(MSG1 message) {
-		
+
 	}
 
 	public void update(MSG2 message) {
-		
+
 	}
 
 	public void update(MSG3 message) {
-		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		AirTrack track = (AirTrack) trackStore.getOrDefault(
+				message.getHexIdent(), new AirTrack());
 		track.latitude = Double.parseDouble(message.getLatitude());
 		track.longitude = Double.parseDouble(message.getLongitude());
 		track.altitude = Integer.parseInt(message.getAltitude());
@@ -114,36 +117,41 @@ public class SBS1Connector implements Connector, SBS1Observer {
 	}
 
 	public void update(MSG4 message) {
-		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		AirTrack track = (AirTrack) trackStore.getOrDefault(
+				message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
 		track.icao = message.getAircraftId();
 		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG5 message) {
-		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		AirTrack track = (AirTrack) trackStore.getOrDefault(
+				message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
 		track.icao = message.getAircraftId();
 		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG6 message) {
-		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		AirTrack track = (AirTrack) trackStore.getOrDefault(
+				message.getHexIdent(), new AirTrack());
 		track.icao = message.getAircraftId();
 		track.squawk = message.getSquawk();
-//		track.altitude = Integer.parseInt(message.getAltitude());
+		// track.altitude = Integer.parseInt(message.getAltitude());
 		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG7 message) {
-		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		AirTrack track = (AirTrack) trackStore.getOrDefault(
+				message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
 		track.icao = message.getAircraftId();
 		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG8 message) {
-		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		AirTrack track = (AirTrack) trackStore.getOrDefault(
+				message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
 		track.icao = message.getAircraftId();
 		track.onGround = message.isOnGround();
@@ -151,23 +159,23 @@ public class SBS1Connector implements Connector, SBS1Observer {
 	}
 
 	public void update(ID message) {
-		
+
 	}
 
 	public void update(SEL message) {
-		
+
 	}
 
 	public void update(AIR message) {
-		
+
 	}
 
 	public void update(STA message) {
-		
+
 	}
 
 	public void update(CLK message) {
-		
+
 	}
 
 }
