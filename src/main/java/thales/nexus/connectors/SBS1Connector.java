@@ -9,9 +9,6 @@ import java.net.Socket;
 
 import javax.inject.Named;
 
-import thales.nexus.AirTrack;
-import thales.nexus.Connector;
-import thales.nexus.TrackStore;
 import net.staniscia.sbs1.SBS1Observer;
 import net.staniscia.sbs1.SBS1Parser;
 import net.staniscia.sbs1.msg.AIR;
@@ -28,6 +25,9 @@ import net.staniscia.sbs1.msg.MSG8;
 import net.staniscia.sbs1.msg.SEL;
 import net.staniscia.sbs1.msg.STA;
 import net.staniscia.sbs1.parser.ParserFactory;
+import thales.nexus.AirTrack;
+import thales.nexus.Connector;
+import thales.nexus.TrackStore;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
