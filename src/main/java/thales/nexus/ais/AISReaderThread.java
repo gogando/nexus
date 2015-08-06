@@ -19,15 +19,7 @@ public class AISReaderThread implements Runnable
 
   private boolean process = true;
 
-  // Used by the test data inputs. Test data from a file is in the format "timestamp,RAW_AIS_DATA",
-  // where timestamp is in ms since epoch
-  private boolean inputStreamContainsTimestamp = false;
-
   long lastSendTime = 0;
-  
-  private boolean writeRawSensorDataToFile = false;
-
-  private PrintWriter aisOutputWriter = null;
 
 
   public AISReaderThread(InputStream in, TrackStore trackStore)
@@ -87,23 +79,12 @@ public class AISReaderThread implements Runnable
     {
       String line = scanner.nextLine();
 
-      // We must be using test data file, so wait the required amount of ms and strip of the
-      // timestamp field
-      if (inputStreamContainsTimestamp)
-      {
-        line = preProcessTestFile(line);
-      }
-
       try
       {
         // System.out.println("AIS: " + line);
         parser.handleSensorData(p, line);
         
-        // Write the sensor data to file
-        if(writeRawSensorDataToFile )
-        {
-          writeAISLineToFile(line);
-        }
+     
       }
       catch (Exception e)
       {
@@ -114,24 +95,7 @@ public class AISReaderThread implements Runnable
   }
 
 
-  private void writeAISLineToFile(String line)
-  {
-    if(aisOutputWriter == null)
-    {
-      try
-      {         
-        aisOutputWriter  = new PrintWriter("ais.txt");
-      }
-      catch (FileNotFoundException e)
-      {        
-        e.printStackTrace();
-        return;
-      }
-    }
-    aisOutputWriter.println(System.currentTimeMillis() + "," + line);
-    aisOutputWriter.flush();
-  }
-
+ 
 
   public void stop()
   {
@@ -140,9 +104,5 @@ public class AISReaderThread implements Runnable
   }
 
 
-  public void setInputStreamContainsTimestamps(boolean val)
-  {
-    inputStreamContainsTimestamp = val;
-  }
 
 }

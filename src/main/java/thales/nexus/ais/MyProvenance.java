@@ -8,7 +8,6 @@ import nl.esi.metis.aisparser.provenance.Provenance;
 public class MyProvenance implements Provenance
 {
 
-  @Override
   public List<Annotation> getAnnotations()
   {
     // TODO Auto-generated method stub
@@ -16,7 +15,7 @@ public class MyProvenance implements Provenance
   }
 
 
-  @Override
+
   public String getProvenanceTree(String arg0)
   {
     // TODO Auto-generated method stub
@@ -24,7 +23,7 @@ public class MyProvenance implements Provenance
   }
 
 
-  @Override
+
   public double getTime()
   {
     // TODO Auto-generated method stub

@@ -1,14 +1,20 @@
 package thales.nexus.ais;
 
 import java.awt.Image;
-
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import thales.nexus.SurfaceTrack;
+import thales.nexus.Track;
+import thales.nexus.TrackStore;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+
+
 
 
 import nl.esi.metis.aisparser.AISMessage;
@@ -105,7 +111,7 @@ class AISMessageHandler implements HandleAISMessage
    */
   public void handleAISMessage(AISMessage message)
   {
-    Track track = null;
+    SurfaceTrack track = null;
     // System.out.println(message);
     //
     // System.out.println("Got an AIS message of type " + message.getMessageID());
@@ -118,7 +124,7 @@ class AISMessageHandler implements HandleAISMessage
       case 3:
         // These are all position messages
         AISMessagePositionReport posReport = (AISMessagePositionReport) message;
-        track = updatePosition(new AISPositionData(posReport));
+        track = (SurfaceTrack) updatePosition(new AISPositionData(posReport));
         track.setNavStatus(UtilsNavStatus.toString(posReport.getNavigationalStatus()));
         checkIfImageExists(posReport.getUserID());
         break;
@@ -132,7 +138,7 @@ class AISMessageHandler implements HandleAISMessage
         // msg5.getTypeOfShipAndCargoType());
         // jdbcInterface.update(new AISVesselData(msg5));
 
-        track = trackStore.get(Integer.toString(msg5.getUserID()));
+        track = (SurfaceTrack) trackStore.get(Integer.toString(msg5.getUserID()));
 
         if (track != null)
         {
@@ -169,7 +175,7 @@ class AISMessageHandler implements HandleAISMessage
       // Type 17: DGNSS Broadcast Binary Message (currently ignoring)
 
       case 18: // Type 18: Standard Class B CS Position Report
-        track = updatePosition(new AISPositionData((AISMessageClassBPositionReport) message));
+        track = (SurfaceTrack) updatePosition(new AISPositionData((AISMessageClassBPositionReport) message));
         break;
 
       case 19: // Type 19: Extended Class B CS Position Report
@@ -178,7 +184,7 @@ class AISMessageHandler implements HandleAISMessage
         // aisSimTrackManager.updateSimTrackType(msg19.getUserID(),
         // msg19.getTypeOfShipAndCargoType());
         // jdbcInterface.update(new AISVesselData(msg19));
-        track = updatePosition(new AISPositionData((AISMessageClassBPositionReport) message));
+        track = (SurfaceTrack) updatePosition(new AISPositionData((AISMessageClassBPositionReport) message));
         if (track != null)
         {
           track.setMarking(msg19.getName());
@@ -192,27 +198,27 @@ class AISMessageHandler implements HandleAISMessage
       case 21:
         AISMessage21 msg21 = (AISMessage21) message;
                 
-        NavigationAid originatingAid = navAidStore.get(msg21.getUserID());
-
-        if (originatingAid == null)
-        {
-          System.out.println("New track: " + msg21.getUserID());
-          NavigationAid aid = new NavigationAid();
-          aid.setMmsi(msg21.getUserID());
-          aid.setLatitude(msg21.getLatitudeInDegrees());
-          aid.setLongitude(msg21.getLongitudeInDegrees());
-          aid.setName(msg21.getNameOfAtoN());
-          aid.setTimestamp(System.currentTimeMillis());
-          navAidStore.add(aid);          
-        }
-        else
-        {
-          originatingAid.setMmsi(msg21.getUserID());
-          originatingAid.setLatitude(msg21.getLatitudeInDegrees());
-          originatingAid.setLongitude(msg21.getLongitudeInDegrees());
-          originatingAid.setName(msg21.getNameOfAtoN());
-          originatingAid.setTimestamp(System.currentTimeMillis());
-        }
+//        NavigationAid originatingAid = navAidStore.get(msg21.getUserID());
+//
+//        if (originatingAid == null)
+//        {
+//          System.out.println("New track: " + msg21.getUserID());
+//          NavigationAid aid = new NavigationAid();
+//          aid.setMmsi(msg21.getUserID());
+//          aid.setLatitude(msg21.getLatitudeInDegrees());
+//          aid.setLongitude(msg21.getLongitudeInDegrees());
+//          aid.setName(msg21.getNameOfAtoN());
+//          aid.setTimestamp(System.currentTimeMillis());
+//          navAidStore.add(aid);          
+//        }
+//        else
+//        {
+//          originatingAid.setMmsi(msg21.getUserID());
+//          originatingAid.setLatitude(msg21.getLatitudeInDegrees());
+//          originatingAid.setLongitude(msg21.getLongitudeInDegrees());
+//          originatingAid.setName(msg21.getNameOfAtoN());
+//          originatingAid.setTimestamp(System.currentTimeMillis());
+//        }
         
         break;
         
@@ -221,7 +227,7 @@ class AISMessageHandler implements HandleAISMessage
 
       case 24: // Type 24: Static Data Report
         AISMessage24 msg24 = (AISMessage24) message;
-        track = trackStore.get(Integer.toString(msg24.getUserID()));
+        track = (SurfaceTrack) trackStore.get(Integer.toString(msg24.getUserID()));
         
         if (msg24.getPartNumber() == 0) // Part A
         {
@@ -259,34 +265,34 @@ class AISMessageHandler implements HandleAISMessage
   private Track updatePosition(AISPositionData data)
   {
     // aisSimTrackManager.update(data);
-    Track originatingTrack = trackStore.get(Integer.toString(data.getMMSI()));
+    SurfaceTrack originatingTrack = (SurfaceTrack) trackStore.get(Integer.toString(data.getMMSI()));
 
     if (originatingTrack == null)
     {
       System.out.println("New track: " + data.getMMSI());
-      Track track = new Track();
-      track.setId(Integer.toString(data.getMMSI()));
-      track.setLatitude(data.getLatitude());
-      track.setLongitude(data.getLongitude());
-      track.setElevation(0.0);
+      SurfaceTrack track = new SurfaceTrack();
+//      track.setId(Integer.toString(data.getMMSI()));
+      track.latitude = data.getLatitude();
+      track.longitude = data.getLongitude();
+      //track.setElevation(0.0);
 
-      track.setCourse(data.getCourse());
-      track.setVelocity(data.getSpeed());
-      track.setPlatform(3); // 3 = surface
-      track.setTimestamp(System.currentTimeMillis());
-      track.setMmsi(data.getMMSI());
+//      track.setCourse(data.getCourse());
+//      track.setVelocity(data.getSpeed());
+//      track.setPlatform(3); // 3 = surface
+//      track.setTimestamp(System.currentTimeMillis());
+//      track.setMmsi(data.getMMSI());
       
       // track.setMarking(Integer.toString(data.getMMSI())); // will be updated
-      trackStore.add(track);
+      trackStore.put(String.valueOf(data.getMMSI()), (Track)track);
       return track;
     }
     else
     {
-      originatingTrack.setLatitude(data.getLatitude());
-      originatingTrack.setLongitude(data.getLongitude());
-      originatingTrack.setCourse(data.getCourse());
-      originatingTrack.setVelocity(data.getSpeed());
-      originatingTrack.setTimestamp(System.currentTimeMillis());
+      originatingTrack.latitude = data.getLatitude();
+      originatingTrack.longitude = data.getLongitude();
+//      originatingTrack.setCourse(data.getCourse());
+//      originatingTrack.setVelocity(data.getSpeed());
+//      originatingTrack.setTimestamp(System.currentTimeMillis());
       return originatingTrack;
     }
   }
