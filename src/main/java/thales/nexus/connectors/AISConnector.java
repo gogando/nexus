@@ -1,4 +1,6 @@
-package thales.nexus;
+package thales.nexus.connectors;
+
+import thales.nexus.Connector;
 
 public class AISConnector implements Connector {
 	

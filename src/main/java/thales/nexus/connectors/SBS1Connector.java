@@ -1,14 +1,15 @@
-package thales.nexus;
+package thales.nexus.connectors;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 
+import thales.nexus.AirTrack;
+import thales.nexus.Connector;
+import thales.nexus.TrackStore;
 import net.staniscia.sbs1.SBS1Observer;
 import net.staniscia.sbs1.SBS1Parser;
 import net.staniscia.sbs1.msg.AIR;
@@ -26,18 +27,24 @@ import net.staniscia.sbs1.msg.SEL;
 import net.staniscia.sbs1.msg.STA;
 import net.staniscia.sbs1.parser.ParserFactory;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+@Singleton
 public class SBS1Connector implements Connector, SBS1Observer {
 
 	private final SBS1Parser parser = ParserFactory.getDefaultParser();
 
 	private boolean running = false;
 
-	private final HashMap<String, Track> trackStore;
+	private final TrackStore trackStore;
 
-	public SBS1Connector(HashMap<String, Track> trackStore) {
+	@Inject
+	public SBS1Connector(TrackStore trackStore) {
 		this.trackStore = trackStore;
 	}
 
+	@Inject
 	public void start() {
 		this.running = true;
 		parser.register(this);
@@ -77,7 +84,6 @@ public class SBS1Connector implements Connector, SBS1Observer {
 				BufferedReader bufferedReader = new BufferedReader(streamReader);
 				while (running) {
 					String line = bufferedReader.readLine();
-					System.out.println(line);
 					parser.processIt(line);
 				}
 			} catch (IOException e) {
@@ -88,41 +94,57 @@ public class SBS1Connector implements Connector, SBS1Observer {
 	}
 
 	public void update(MSG1 message) {
-		System.out.println(message);
+		
 	}
 
 	public void update(MSG2 message) {
-		System.out.println(message);
+		
 	}
 
 	public void update(MSG3 message) {
 		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
-		track.lat = Double.parseDouble(message.getLatitude());
-		track.lon = Double.parseDouble(message.getLongitude());
+		track.latitude = Double.parseDouble(message.getLatitude());
+		track.longitude = Double.parseDouble(message.getLongitude());
+		track.altitude = Integer.parseInt(message.getAltitude());
 		track.flightId = message.getFlightId();
+		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG4 message) {
 		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
+		track.icao = message.getAircraftId();
+		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG5 message) {
 		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
+		track.icao = message.getAircraftId();
+		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG6 message) {
-		
+		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		track.icao = message.getAircraftId();
+		track.squawk = message.getSquawk();
+//		track.altitude = Integer.parseInt(message.getAltitude());
+		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG7 message) {
 		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
 		track.flightId = message.getFlightId();
+		track.icao = message.getAircraftId();
+		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(MSG8 message) {
 		AirTrack track = (AirTrack) trackStore.getOrDefault(message.getHexIdent(), new AirTrack());
+		track.flightId = message.getFlightId();
+		track.icao = message.getAircraftId();
+		track.onGround = message.isOnGround();
+		trackStore.put(message.getHexIdent(), track);
 	}
 
 	public void update(ID message) {
