@@ -2,64 +2,41 @@ package thales.nexus;
 
 public class SurfaceTrack extends Track 
 {
+  
+  public int navStatus;
+  public String marking;
+  public int imo;
+  public int shipAndCargoType;
+  public String callSign;
+  public int length;
+  public int width;
+  public double draught;
+  public String destination;
+  public long eta;
+  private String mmsi;
 
-  public void setNavStatus(String str)
+  public SurfaceTrack()
   {
-    // TODO Auto-generated method stub
+    type = "surface";
+    altitude = 0.0;
   }
 
-  public void setMarking(String name)
+  /**
+   * @return the mmsi
+   */
+  public String getMmsi()
   {
-    // TODO Auto-generated method stub
-    
+    return mmsi;
   }
 
-  public void setImo(int imoNumber)
+  /**
+   * @param mmsi the mmsi to set
+   */
+  public void setMmsi(String mmsi)
   {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setShipAndCargoType(int typeOfShipAndCargoType)
-  {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setCallSign(String callSign)
-  {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setLength(int i)
-  {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setWidth(int i)
-  {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setDraught(double d)
-  {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setDestination(String destination)
-  {
-    // TODO Auto-generated method stub
-    
-  }
-
-  public void setEta(long convertToTime)
-  {
-    // TODO Auto-generated method stub
-    
+    this.mmsi = mmsi;
+    // For AIS we use MMSI as unique identifier
+    id = mmsi;
   }
 
 }

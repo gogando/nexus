@@ -37,271 +37,300 @@ import thales.nexus.ais.MyProvenance;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+
 @Singleton
 @Named("ais")
-public class AISConnector implements Connector, HandleAISMessage,
-		HandleInvalidInput {
+public class AISConnector implements Connector, HandleAISMessage, HandleInvalidInput
+{
 
-	private final Provenance provenance = new MyProvenance();
+  private final Provenance provenance = new MyProvenance();
 
-	private final AISParser parser = new AISParser(this, this);
+  private final AISParser parser = new AISParser(this, this);
 
-	private final TrackStore trackStore;
+  private final TrackStore trackStore;
 
-	private boolean running = false;
+  private boolean running = false;
 
-	@Inject
-	public AISConnector(TrackStore trackStore) {
-		this.trackStore = trackStore;
-	}
 
-	@Inject
-	public void start() {
-		this.running = true;
-		new Server().start();
-	}
+  @Inject
+  public AISConnector(TrackStore trackStore)
+  {
+    this.trackStore = trackStore;
+  }
 
-	public void stop() {
-		this.running = false;
-	}
 
-	private class Server extends Thread {
+  @Inject
+  public void start()
+  {
+    this.running = true;
+    new Server().start();
+  }
 
-		public void run() {
-			try (ServerSocket server = new ServerSocket(30001)) {
-				while (running) {
-					new Client(server.accept()).start();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
 
-	private class Client extends Thread {
+  public void stop()
+  {
+    this.running = false;
+  }
 
-		private final Socket client;
+  private class Server extends Thread
+  {
 
-		public Client(Socket client) {
-			this.client = client;
-		}
+    public void run()
+    {
+      try (ServerSocket server = new ServerSocket(30001))
+      {
+        while (running)
+        {
+          new Client(server.accept()).start();
+        }
+      }
+      catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+    }
+  }
 
-		@Override
-		public void run() {
-			try (InputStream in = client.getInputStream()) {
-				InputStreamReader streamReader = new InputStreamReader(in);
-				BufferedReader bufferedReader = new BufferedReader(streamReader);
-				while (running) {
-					String line = bufferedReader.readLine();
-					parser.handleSensorData(provenance, line);
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+  private class Client extends Thread
+  {
 
-	}
+    private final Socket client;
 
-	private Track updatePosition(AISPositionData data) {
-		// aisSimTrackManager.update(data);
-		SurfaceTrack originatingTrack = (SurfaceTrack) trackStore.get(Integer
-				.toString(data.getMMSI()));
 
-		if (originatingTrack == null) {
-			SurfaceTrack track = new SurfaceTrack();
-			// track.setId(Integer.toString(data.getMMSI()));
-			track.latitude = data.getLatitude();
-			track.longitude = data.getLongitude();
-			// track.setElevation(0.0);
+    public Client(Socket client)
+    {
+      this.client = client;
+    }
 
-			// track.setCourse(data.getCourse());
-			// track.setVelocity(data.getSpeed());
-			// track.setPlatform(3); // 3 = surface
-			// track.setTimestamp(System.currentTimeMillis());
-			// track.setMmsi(data.getMMSI());
 
-			// track.setMarking(Integer.toString(data.getMMSI())); // will be
-			// updated
-			trackStore.put(String.valueOf(data.getMMSI()), (Track) track);
-			return track;
-		} else {
-			originatingTrack.latitude = data.getLatitude();
-			originatingTrack.longitude = data.getLongitude();
-			// originatingTrack.setCourse(data.getCourse());
-			// originatingTrack.setVelocity(data.getSpeed());
-			// originatingTrack.setTimestamp(System.currentTimeMillis());
-			return originatingTrack;
-		}
-	}
+    @Override
+    public void run()
+    {
+      try (InputStream in = client.getInputStream())
+      {
+        InputStreamReader streamReader = new InputStreamReader(in);
+        BufferedReader bufferedReader = new BufferedReader(streamReader);
+        while (running)
+        {
+          String line = bufferedReader.readLine();
+          parser.handleSensorData(provenance, line);
+        }
+      }
+      catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+    }
 
-	@Override
-	public void handleAISMessage(AISMessage message) {
-		SurfaceTrack track = (SurfaceTrack) trackStore.getOrDefault(
-				message.getUserID(), new SurfaceTrack());
-		switch (message.getMessageID()) {
-		case 1: // Types 1, 2 and 3: Position Report Class A
-		case 2:
-		case 3:
-			// These are all position messages
-			AISMessagePositionReport posReport = (AISMessagePositionReport) message;
-			track = (SurfaceTrack) updatePosition(new AISPositionData(posReport));
-			track.setNavStatus(UtilsNavStatus.toString(posReport
-					.getNavigationalStatus()));
-			// checkIfImageExists(posReport.getUserID());
-			break;
+  }
 
-		// Type 4: Base Station Report (currently ignoring)
 
-		case 5: // Type 5: Static and Voyage Related Data
-			AISMessage05 msg5 = (AISMessage05) message;
-			// aisSimTrackManager.updateSimTrackName(msg5.getUserID(),
-			// msg5.getName());
-			// aisSimTrackManager.updateSimTrackType(msg5.getUserID(),
-			// msg5.getTypeOfShipAndCargoType());
-			// jdbcInterface.update(new AISVesselData(msg5));
+  private Track updatePosition(AISPositionData data)
+  {
+    // aisSimTrackManager.update(data);
+    SurfaceTrack originatingTrack = (SurfaceTrack) trackStore.get(Integer.toString(data.getMMSI()));
 
-			track = (SurfaceTrack) trackStore.get(Integer.toString(msg5
-					.getUserID()));
+    if (originatingTrack == null)
+    {
+      SurfaceTrack track = new SurfaceTrack();
+      track.setMmsi(Integer.toString(data.getMMSI()));
+      track.latitude = data.getLatitude();
+      track.longitude = data.getLongitude();
+      track.course = data.getCourse();
+      track.speed = data.getSpeed();
+      // track.setTimestamp(System.currentTimeMillis());
+      
+      trackStore.put(String.valueOf(data.getMMSI()), (Track) track);
+      return track;
+    }
+    else
+    {
+      originatingTrack.latitude = data.getLatitude();
+      originatingTrack.longitude = data.getLongitude();
+      originatingTrack.course = data.getCourse();
+      originatingTrack.speed = data.getSpeed();
+      // originatingTrack.setTimestamp(System.currentTimeMillis());
+      return originatingTrack;
+    }
+  }
 
-			if (track != null) {
-				track.setMarking(msg5.getName());
-				track.setImo(msg5.getImoNumber());
-				track.setShipAndCargoType(msg5.getTypeOfShipAndCargoType());
-				track.setCallSign(msg5.getCallSign());
-				track.setLength(UtilsDimensions30.getBow(msg5.getDimension())
-						+ UtilsDimensions30.getStern(msg5.getDimension()));
-				track.setWidth(UtilsDimensions30.getStarboard(msg5
-						.getDimension())
-						+ UtilsDimensions30.getPort(msg5.getDimension()));
-				track.setDraught(msg5.getMaximumPresentStaticDraught() / 10.0);
-				track.setDestination(msg5.getDestination());
-				// TODO track.setEta(
-				if (UtilsEta.isSemanticallyCorrectValue(msg5.getEta())) {
-					track.setEta(UtilsEta.convertToTime(msg5.getEta(),
-							System.currentTimeMillis() / 1000.0));
-				}
 
-			}
-			break;
+  @Override
+  public void handleAISMessage(AISMessage message)
+  {
+    SurfaceTrack track = (SurfaceTrack) trackStore.getOrDefault(message.getUserID(),
+                                                                new SurfaceTrack());
+    switch (message.getMessageID())
+    {
+      case 1: // Types 1, 2 and 3: Position Report Class A
+      case 2:
+      case 3:
+        // These are all position messages
+        AISMessagePositionReport posReport = (AISMessagePositionReport) message;
+        track = (SurfaceTrack) updatePosition(new AISPositionData(posReport));
+        track.navStatus = posReport.getNavigationalStatus();
+        // checkIfImageExists(posReport.getUserID());
+        break;
 
-		// Type 6: Binary Addressed Message (currently ignoring)
-		// Type 7: Binary Acknowledge (currently ignoring)
-		// Type 8: Binary Broadcast Message (currently ignoring)
-		// Type 9: Standard SAR Aircraft Position Report (currently ignoring)
-		// Type 10: UTC/Date Inquiry (currently ignoring)
-		// Type 11: UTC/Date Response (currently ignoring)
-		// Type 12: Addressed Safety-Related Message (currently ignoring)
-		// Type 13: Safety-Related Acknowledgement (currently ignoring)
-		// Type 14: Safety-Related Broadcast Message (currently ignoring)
-		// Type 15: Interrogation (currently ignoring)
-		// Type 16: Assignment Mode Command (currently ignoring)
-		// Type 17: DGNSS Broadcast Binary Message (currently ignoring)
+      // Type 4: Base Station Report (currently ignoring)
 
-		case 18: // Type 18: Standard Class B CS Position Report
-			track = (SurfaceTrack) updatePosition(new AISPositionData(
-					(AISMessageClassBPositionReport) message));
-			break;
+      case 5: // Type 5: Static and Voyage Related Data
+        AISMessage05 msg5 = (AISMessage05) message;
+        // aisSimTrackManager.updateSimTrackName(msg5.getUserID(),
+        // msg5.getName());
+        // aisSimTrackManager.updateSimTrackType(msg5.getUserID(),
+        // msg5.getTypeOfShipAndCargoType());
+        // jdbcInterface.update(new AISVesselData(msg5));
 
-		case 19: // Type 19: Extended Class B CS Position Report
-			AISMessage19 msg19 = (AISMessage19) message;
-			// aisSimTrackManager.updateSimTrackName(msg19.getUserID(),
-			// msg19.getName());
-			// aisSimTrackManager.updateSimTrackType(msg19.getUserID(),
-			// msg19.getTypeOfShipAndCargoType());
-			// jdbcInterface.update(new AISVesselData(msg19));
-			track = (SurfaceTrack) updatePosition(new AISPositionData(
-					(AISMessageClassBPositionReport) message));
-			if (track != null) {
-				track.setMarking(msg19.getName());
-			}
-			break;
+        track = (SurfaceTrack) trackStore.get(Integer.toString(msg5.getUserID()));
 
-		// Type 20: Data Link Management Message (currently ignoring)
+        if (track != null)
+        {
+          track.marking = msg5.getName();
+          track.imo = msg5.getImoNumber();
+          track.shipAndCargoType = msg5.getTypeOfShipAndCargoType();
+          track.callSign = msg5.getCallSign();
+          track.length = UtilsDimensions30.getBow(msg5.getDimension()) +
+                         UtilsDimensions30.getStern(msg5.getDimension());
+          track.width = UtilsDimensions30.getStarboard(msg5.getDimension()) +
+                        UtilsDimensions30.getPort(msg5.getDimension());
+          track.draught = msg5.getMaximumPresentStaticDraught() / 10.0;
+          track.destination = msg5.getDestination();
+          // TODO track.setEta(
+          if (UtilsEta.isSemanticallyCorrectValue(msg5.getEta()))
+          {
+            track.eta = UtilsEta.convertToTime(msg5.getEta(), System.currentTimeMillis() / 1000.0);
+          }
 
-		// Type 21: Aid-to-Navigation Report
-		// Identification and location message to be emitted by aids to
-		// navigation such as buoys and lighthouses.
-		case 21:
-			AISMessage21 msg21 = (AISMessage21) message;
+        }
+        break;
 
-			// NavigationAid originatingAid =
-			// navAidStore.get(msg21.getUserID());
-			//
-			// if (originatingAid == null)
-			// {
-			// System.out.println("New track: " + msg21.getUserID());
-			// NavigationAid aid = new NavigationAid();
-			// aid.setMmsi(msg21.getUserID());
-			// aid.setLatitude(msg21.getLatitudeInDegrees());
-			// aid.setLongitude(msg21.getLongitudeInDegrees());
-			// aid.setName(msg21.getNameOfAtoN());
-			// aid.setTimestamp(System.currentTimeMillis());
-			// navAidStore.add(aid);
-			// }
-			// else
-			// {
-			// originatingAid.setMmsi(msg21.getUserID());
-			// originatingAid.setLatitude(msg21.getLatitudeInDegrees());
-			// originatingAid.setLongitude(msg21.getLongitudeInDegrees());
-			// originatingAid.setName(msg21.getNameOfAtoN());
-			// originatingAid.setTimestamp(System.currentTimeMillis());
-			// }
+      // Type 6: Binary Addressed Message (currently ignoring)
+      // Type 7: Binary Acknowledge (currently ignoring)
+      // Type 8: Binary Broadcast Message (currently ignoring)
+      // Type 9: Standard SAR Aircraft Position Report (currently ignoring)
+      // Type 10: UTC/Date Inquiry (currently ignoring)
+      // Type 11: UTC/Date Response (currently ignoring)
+      // Type 12: Addressed Safety-Related Message (currently ignoring)
+      // Type 13: Safety-Related Acknowledgement (currently ignoring)
+      // Type 14: Safety-Related Broadcast Message (currently ignoring)
+      // Type 15: Interrogation (currently ignoring)
+      // Type 16: Assignment Mode Command (currently ignoring)
+      // Type 17: DGNSS Broadcast Binary Message (currently ignoring)
 
-			break;
+      case 18: // Type 18: Standard Class B CS Position Report
+        track = (SurfaceTrack) updatePosition(new AISPositionData(
+                                                                  (AISMessageClassBPositionReport) message));
+        break;
 
-		// Type 22: Channel Management (currently ignoring)
-		// Type 23: Group Assignment Command (currently ignoring)
+      case 19: // Type 19: Extended Class B CS Position Report
+        AISMessage19 msg19 = (AISMessage19) message;
+        // aisSimTrackManager.updateSimTrackName(msg19.getUserID(),
+        // msg19.getName());
+        // aisSimTrackManager.updateSimTrackType(msg19.getUserID(),
+        // msg19.getTypeOfShipAndCargoType());
+        // jdbcInterface.update(new AISVesselData(msg19));
+        track = (SurfaceTrack) updatePosition(new AISPositionData(
+                                                                  (AISMessageClassBPositionReport) message));
+        if (track != null)
+        {
+          track.marking = msg19.getName();
+        }
+        break;
 
-		case 24: // Type 24: Static Data Report
-			AISMessage24 msg24 = (AISMessage24) message;
-			track = (SurfaceTrack) trackStore.get(Integer.toString(msg24
-					.getUserID()));
+      // Type 20: Data Link Management Message (currently ignoring)
 
-			if (msg24.getPartNumber() == 0) // Part A
-			{
-				AISMessage24PartA msg24a = (AISMessage24PartA) msg24;
-				// jdbcInterface.update(new AISVesselData(msg24a));
+      // Type 21: Aid-to-Navigation Report
+      // Identification and location message to be emitted by aids to
+      // navigation such as buoys and lighthouses.
+      case 21:
+        AISMessage21 msg21 = (AISMessage21) message;
 
-				if (track != null) {
-					track.setMarking(msg24a.getName());
-				}
-			} else
-			// Part B
-			{
-				AISMessage24PartB msg24b = (AISMessage24PartB) msg24;
-				// jdbcInterface.update(new AISVesselData(msg24b));
-				if (track != null) {
-					track.setShipAndCargoType(msg24b
-							.getTypeOfShipAndCargoType());
-				}
-			}
-			break;
+        // NavigationAid originatingAid =
+        // navAidStore.get(msg21.getUserID());
+        //
+        // if (originatingAid == null)
+        // {
+        // System.out.println("New track: " + msg21.getUserID());
+        // NavigationAid aid = new NavigationAid();
+        // aid.setMmsi(msg21.getUserID());
+        // aid.setLatitude(msg21.getLatitudeInDegrees());
+        // aid.setLongitude(msg21.getLongitudeInDegrees());
+        // aid.setName(msg21.getNameOfAtoN());
+        // aid.setTimestamp(System.currentTimeMillis());
+        // navAidStore.add(aid);
+        // }
+        // else
+        // {
+        // originatingAid.setMmsi(msg21.getUserID());
+        // originatingAid.setLatitude(msg21.getLatitudeInDegrees());
+        // originatingAid.setLongitude(msg21.getLongitudeInDegrees());
+        // originatingAid.setName(msg21.getNameOfAtoN());
+        // originatingAid.setTimestamp(System.currentTimeMillis());
+        // }
 
-		// Type 25: Single Slot Binary Message (currently ignoring)
-		// Type 26: Multiple Slot Binary Message (currently ignoring)
-		// Type 27: Long Range AIS Broadcast message (currently ignoring)
+        break;
 
-		default:
-			// System.out.println("Received an unhandled AIS message [" +
-			// message.getMessageID() + "]");
-		}
+      // Type 22: Channel Management (currently ignoring)
+      // Type 23: Group Assignment Command (currently ignoring)
 
-		trackStore.put(Integer.toString(message.getUserID()), track);
-	}
+      case 24: // Type 24: Static Data Report
+        AISMessage24 msg24 = (AISMessage24) message;
+        track = (SurfaceTrack) trackStore.get(Integer.toString(msg24.getUserID()));
 
-	@Override
-	public void handleInvalidVDMMessage(VDMMessage invalidVDMMessage) {
+        if (msg24.getPartNumber() == 0) // Part A
+        {
+          AISMessage24PartA msg24a = (AISMessage24PartA) msg24;
+          // jdbcInterface.update(new AISVesselData(msg24a));
 
-	}
+          if (track != null)
+          {
+            track.marking = msg24a.getName();
+          }
+        }
+        else
+        // Part B
+        {
+          AISMessage24PartB msg24b = (AISMessage24PartB) msg24;
+          // jdbcInterface.update(new AISVesselData(msg24b));
+          if (track != null)
+          {
+            track.shipAndCargoType = msg24b.getTypeOfShipAndCargoType();
+          }
+        }
+        break;
 
-	@Override
-	public void handleInvalidVDMLine(VDMLine invalidVDMLine) {
+      // Type 25: Single Slot Binary Message (currently ignoring)
+      // Type 26: Multiple Slot Binary Message (currently ignoring)
+      // Type 27: Long Range AIS Broadcast message (currently ignoring)
 
-	}
+      default:
+        // System.out.println("Received an unhandled AIS message [" +
+        // message.getMessageID() + "]");
+    }
 
-	@Override
-	public void handleInvalidSensorData(Provenance source, String sensorData) {
+    trackStore.put(Integer.toString(message.getUserID()), track);
+  }
 
-	}
+
+  @Override
+  public void handleInvalidVDMMessage(VDMMessage invalidVDMMessage)
+  {
+
+  }
+
+
+  @Override
+  public void handleInvalidVDMLine(VDMLine invalidVDMLine)
+  {
+
+  }
+
+
+  @Override
+  public void handleInvalidSensorData(Provenance source, String sensorData)
+  {
+
+  }
 
 }
